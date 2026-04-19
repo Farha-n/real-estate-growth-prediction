@@ -134,6 +134,7 @@ let priceChart;
 let factorChart;
 let map;
 let markers = new Map();
+let editingAreaId = null;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -217,6 +218,26 @@ function normalizeArea(raw) {
 
 function normalizeMany(rows) {
   return rows.map((row) => normalizeArea(row));
+}
+
+function mergeUniqueAreas(existingAreas, incomingAreas) {
+  const existingKeys = new Set(
+    existingAreas.map((area) => `${area.areaName.toLowerCase()}-${area.city.toLowerCase()}`),
+  );
+
+  const merged = [...existingAreas];
+
+  for (const area of incomingAreas) {
+    const key = `${area.areaName.toLowerCase()}-${area.city.toLowerCase()}`;
+    if (existingKeys.has(key)) {
+      continue;
+    }
+
+    existingKeys.add(key);
+    merged.push(area);
+  }
+
+  return merged;
 }
 
 function sampleDataset() {
@@ -378,8 +399,48 @@ function focusArea(areaId) {
   const marker = markers.get(areaId);
   if (!area || !marker) return;
 
+  document.querySelector("#map").scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+
   map.flyTo([area.latitude, area.longitude], 12, { duration: 0.7 });
-  marker.openPopup();
+
+  window.setTimeout(() => {
+    marker.openPopup();
+  }, 750);
+}
+
+function setEditingArea(area) {
+  editingAreaId = area.id;
+
+  document.querySelector("#areaNameInput").value = area.areaName;
+  document.querySelector("#cityInput").value = area.city;
+  document.querySelector("#latInput").value = area.latitude;
+  document.querySelector("#lngInput").value = area.longitude;
+  document.querySelector("#currentPriceInput").value = area.currentPrice;
+  document.querySelector("#previousPriceInput").value = area.previousPrice;
+  document.querySelector("#infraInput").value = area.infrastructureScore;
+  document.querySelector("#demandInput").value = area.demandScore;
+  document.querySelector("#connectivityInput").value = area.connectivityScore;
+  document.querySelector("#yieldInput").value = area.rentalYield;
+  document.querySelector("#densityInput").value = area.listingDensity;
+  document.querySelector("#projectInput").value = area.upcomingProject;
+
+  document.querySelector("#submitAreaBtn").textContent = "Update Area";
+  document.querySelector("#cancelEditBtn").hidden = false;
+
+  document.querySelector("#areaForm").scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
+function clearEditMode() {
+  editingAreaId = null;
+  document.querySelector("#areaForm").reset();
+  document.querySelector("#submitAreaBtn").textContent = "Add Area";
+  document.querySelector("#cancelEditBtn").hidden = true;
 }
 
 function removeArea(areaId) {
@@ -409,6 +470,7 @@ function renderTable() {
       <td>
         <div class="table-actions">
           <button class="table-button" type="button" data-action="view">View</button>
+          <button class="table-button" type="button" data-action="edit">Edit</button>
           <button class="table-button danger" type="button" data-action="delete">Delete</button>
         </div>
       </td>
@@ -418,6 +480,10 @@ function renderTable() {
     row.querySelector('[data-action="view"]').addEventListener("click", (event) => {
       event.stopPropagation();
       focusArea(area.id);
+    });
+    row.querySelector('[data-action="edit"]').addEventListener("click", (event) => {
+      event.stopPropagation();
+      setEditingArea(area);
     });
     row.querySelector('[data-action="delete"]').addEventListener("click", (event) => {
       event.stopPropagation();
@@ -644,13 +710,22 @@ document.querySelector("#areaForm").addEventListener("submit", (event) => {
       upcomingProject: document.querySelector("#projectInput").value,
     });
 
-    areas = [...areas, newArea];
-    document.querySelector("#areaForm").reset();
+    areas = editingAreaId
+      ? areas.map((area) =>
+          area.id === editingAreaId ? { ...newArea, id: editingAreaId } : area,
+        )
+      : [...areas, newArea];
+
+    clearEditMode();
     renderAll();
     syncAreas();
   } catch (error) {
     window.alert(error.message);
   }
+});
+
+document.querySelector("#cancelEditBtn").addEventListener("click", () => {
+  clearEditMode();
 });
 
 document.querySelector("#searchInput").addEventListener("input", (event) => {
@@ -664,11 +739,26 @@ document.querySelector("#uploadInput").addEventListener("change", async (event) 
 
   try {
     const text = await file.text();
-    const parsed = file.name.toLowerCase().endsWith(".json") ? JSON.parse(text) : parseCsv(text);
+    const parsed = file.name.toLowerCase().endsWith(".json")
+      ? JSON.parse(text)
+      : parseCsv(text);
+
     const rows = Array.isArray(parsed) ? parsed : parsed.records;
-    areas = normalizeMany(rows);
+    const uploadedAreas = normalizeMany(rows);
+
+    const nextAreas = mergeUniqueAreas(areas, uploadedAreas);
+    const newAreas = nextAreas.slice(areas.length);
+
+    areas = nextAreas;
+
     renderAll();
     syncAreas();
+
+    if (newAreas.length === 0) {
+      window.alert("Uploaded records already exist.");
+    } else {
+      window.alert(`Added ${newAreas.length} uploaded records.`);
+    }
   } catch (error) {
     window.alert(error.message);
   } finally {
@@ -677,9 +767,21 @@ document.querySelector("#uploadInput").addEventListener("change", async (event) 
 });
 
 document.querySelector("#loadSampleBtn").addEventListener("click", () => {
-  areas = sampleDataset();
+  const samples = sampleDataset();
+
+  const nextAreas = mergeUniqueAreas(areas, samples);
+  const newSamples = nextAreas.slice(areas.length);
+
+  areas = nextAreas;
+
   renderAll();
   syncAreas();
+
+  if (newSamples.length === 0) {
+    window.alert("Sample records are already loaded.");
+  } else {
+    window.alert(`Added ${newSamples.length} sample records.`);
+  }
 });
 
 document.querySelector("#exportJsonBtn").addEventListener("click", () => {

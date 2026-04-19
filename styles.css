@@ -232,7 +232,8 @@ input:focus {
 
 .row-2,
 .row-3,
-.btn-row {
+.btn-row,
+.form-actions {
   display: grid;
   gap: 8px;
 }
@@ -280,6 +281,10 @@ button:hover {
 
 .btn-row {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-actions {
+  grid-template-columns: 1fr auto;
 }
 
 .map-head {
@@ -489,6 +494,7 @@ th {
   .row-2,
   .row-3,
   .btn-row,
+  .form-actions,
   .analytics {
     grid-template-columns: 1fr;
   }

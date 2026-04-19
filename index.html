@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Real Estate Growth Prediction System</title>
+    <link rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -140,7 +141,10 @@
               <input id="projectInput" required placeholder="Metro extension and expressway link" />
             </label>
 
-            <button type="submit">Add Area</button>
+            <div class="form-actions">
+              <button id="submitAreaBtn" type="submit">Add Area</button>
+              <button id="cancelEditBtn" type="button" class="ghost" hidden>Cancel Edit</button>
+            </div>
           </form>
         </section>
 
@@ -148,12 +152,12 @@
           <div class="section-head">
             <h3>Dataset Tools</h3>
             <p>
-              Upload CSV or JSON files, restore the sample NCR dataset, or export all predictions.
+              Upload CSV or JSON files to add new areas, add sample data, or export all predictions.
             </p>
           </div>
           <input id="uploadInput" type="file" accept=".csv,.json,application/json,text/csv" />
           <div class="btn-row">
-            <button id="loadSampleBtn" type="button" class="ghost">Load Sample</button>
+            <button id="loadSampleBtn" type="button" class="ghost">Add Sample Data</button>
             <button id="exportJsonBtn" type="button" class="ghost">Export JSON</button>
             <button id="exportCsvBtn" type="button" class="ghost">Export CSV</button>
           </div>

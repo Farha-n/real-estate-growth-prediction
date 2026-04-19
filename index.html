@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real Estate Growth Prediction System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-bg"></div>
+    <main class="layout">
+      <aside class="sidebar">
+        <header class="hero card">
+          <p class="kicker">CYBERJOAR MODEL 2</p>
+          <h1>Real Estate Growth Prediction System</h1>
+          <p>
+            Predict the strongest investment corridors over the next 24 to 60 months using price
+            growth, infrastructure, demand, connectivity, rental yield, and development signals.
+          </p>
+          <div class="hero-meta">
+            <span class="status-pill" id="apiStatus">Loading data</span>
+            <span class="status-pill muted">Problem Statement 3</span>
+          </div>
+        </header>
+
+        <section class="card stats" aria-label="summary cards">
+          <article>
+            <h2 id="totalAreas">0</h2>
+            <p>Total Areas</p>
+          </article>
+          <article>
+            <h2 id="avgScore">0.0</h2>
+            <p>Average Growth Score</p>
+          </article>
+          <article>
+            <h2 id="highCount">0</h2>
+            <p>High Growth Zones</p>
+          </article>
+          <article>
+            <h2 id="bestZone">-</h2>
+            <p>Best Investment Zone</p>
+          </article>
+        </section>
+
+        <section class="card form-card" aria-label="search and add area">
+          <div class="section-head">
+            <h3>Search and Add</h3>
+            <p>Search the dataset or add a new area manually.</p>
+          </div>
+
+          <label>
+            Search areas
+            <input id="searchInput" placeholder="Search by area, city, or project" />
+          </label>
+
+          <form id="areaForm" class="form-stack">
+            <div class="row-2">
+              <label>
+                Area Name
+                <input id="areaNameInput" required placeholder="Greater Noida West" />
+              </label>
+              <label>
+                City
+                <input id="cityInput" required placeholder="Noida" />
+              </label>
+            </div>
+
+            <div class="row-2">
+              <label>
+                Latitude
+                <input id="latInput" required type="number" step="any" placeholder="28.4744" />
+              </label>
+              <label>
+                Longitude
+                <input id="lngInput" required type="number" step="any" placeholder="77.5040" />
+              </label>
+            </div>
+
+            <div class="row-2">
+              <label>
+                Current Price / sq.ft
+                <input id="currentPriceInput" required type="number" step="any" placeholder="6200" />
+              </label>
+              <label>
+                Previous Price / sq.ft
+                <input id="previousPriceInput" required type="number" step="any" placeholder="5100" />
+              </label>
+            </div>
+
+            <div class="row-3">
+              <label>
+                Infrastructure
+                <input id="infraInput" required type="number" min="0" max="100" placeholder="86" />
+              </label>
+              <label>
+                Demand
+                <input id="demandInput" required type="number" min="0" max="100" placeholder="78" />
+              </label>
+              <label>
+                Connectivity
+                <input id="connectivityInput" required type="number" min="0" max="100" placeholder="82" />
+              </label>
+            </div>
+
+            <div class="row-2">
+              <label>
+                Rental Yield (%)
+                <input id="yieldInput" required type="number" step="any" min="0" max="12" placeholder="4.8" />
+              </label>
+              <label>
+                Listing Density
+                <input id="densityInput" required type="number" min="0" max="100" placeholder="72" />
+              </label>
+            </div>
+
+            <label>
+              Upcoming Project
+              <input id="projectInput" required placeholder="Metro extension and expressway link" />
+            </label>
+
+            <button type="submit">Add Area</button>
+          </form>
+        </section>
+
+        <section class="card upload-card" aria-label="data import and export">
+          <div class="section-head">
+            <h3>Dataset Tools</h3>
+            <p>
+              Upload CSV or JSON files, restore the sample NCR dataset, or export all predictions.
+            </p>
+          </div>
+          <input id="uploadInput" type="file" accept=".csv,.json,application/json,text/csv" />
+          <div class="btn-row">
+            <button id="loadSampleBtn" type="button" class="ghost">Load Sample</button>
+            <button id="exportJsonBtn" type="button" class="ghost">Export JSON</button>
+            <button id="exportCsvBtn" type="button" class="ghost">Export CSV</button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="main-panel">
+        <div class="map-head">
+          <div>
+            <p class="kicker">Geo Investment View</p>
+            <h2>Growth Hotspot Map</h2>
+          </div>
+          <div class="chips" role="group" aria-label="growth classification filter">
+            <button class="chip active" type="button" data-filter="ALL">All</button>
+            <button class="chip" type="button" data-filter="High Growth Zone">High</button>
+            <button class="chip" type="button" data-filter="Emerging Zone">Emerging</button>
+            <button class="chip" type="button" data-filter="Moderate Zone">Moderate</button>
+            <button class="chip" type="button" data-filter="Low Priority Zone">Low</button>
+          </div>
+        </div>
+
+        <div id="map"></div>
+
+        <section class="analytics">
+          <article class="card chart-card">
+            <h3>Growth Score by Area</h3>
+            <canvas id="growthChart" height="180"></canvas>
+          </article>
+          <article class="card chart-card">
+            <h3>Price Growth Comparison</h3>
+            <canvas id="priceChart" height="180"></canvas>
+          </article>
+          <article class="card chart-card">
+            <h3>Demand vs Infrastructure Balance</h3>
+            <canvas id="factorChart" height="180"></canvas>
+          </article>
+        </section>
+
+        <section class="card table-card">
+          <div class="table-head">
+            <div>
+              <h3>Ranking Table</h3>
+              <p>Areas sorted by Growth Velocity Score and filtered by the active search.</p>
+            </div>
+            <p id="resultCount">0 results</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th>City</th>
+                  <th>Score</th>
+                  <th>Price Growth</th>
+                  <th>Yield</th>
+                  <th>Density</th>
+                  <th>Class</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rankingBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

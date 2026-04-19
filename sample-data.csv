@@ -1,0 +1,9 @@
+areaName,city,latitude,longitude,currentPrice,previousPrice,infrastructureScore,demandScore,connectivityScore,rentalYield,listingDensity,upcomingProject
+Greater Noida West,Noida,28.5801,77.4253,6200,5100,86,78,82,4.8,72,Metro extension and expressway connectivity
+Noida Sector 150,Noida,28.4649,77.4786,9400,7800,84,81,79,4.3,68,Sports city and metro corridor
+Gurugram Sector 79,Gurugram,28.3869,76.9986,11200,9300,88,85,91,4.9,76,Dwarka expressway linkage
+Dwarka Expressway,Gurugram,28.4721,77.0294,11800,9600,90,87,94,5.1,80,Expressway completion and commercial nodes
+Faridabad Neharpar,Faridabad,28.3964,77.3152,5600,4900,72,68,70,4.4,61,Metro extension and urban road upgrades
+Sohna Road,Gurugram,28.3336,77.0587,8500,7200,79,74,77,4.6,66,Commercial corridor and road widening
+Yamuna Expressway,Greater Noida,28.5781,77.6088,6800,5900,83,75,80,4.7,70,Noida airport access and logistics hub
+Raj Nagar Extension,Ghaziabad,28.6811,77.4373,5400,4700,69,64,67,4.2,59,Highway access improvements

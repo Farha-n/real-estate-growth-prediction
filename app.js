@@ -152,6 +152,23 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function requiredNumber(value, fieldName, options = {}) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${fieldName} must be a valid number.`);
+  }
+
+  if (options.min !== undefined && parsed < options.min) {
+    throw new Error(`${fieldName} must be greater than or equal to ${options.min}.`);
+  }
+
+  if (options.max !== undefined && parsed > options.max) {
+    throw new Error(`${fieldName} must be less than or equal to ${options.max}.`);
+  }
+
+  return parsed;
+}
+
 function calculateMetrics(record) {
   const previousPrice = toNumber(record.previousPrice);
   const currentPrice = toNumber(record.currentPrice);
@@ -190,12 +207,32 @@ function calculateMetrics(record) {
 }
 
 function normalizeArea(raw) {
-  const latitude = Number(raw.latitude ?? raw.lat);
-  const longitude = Number(raw.longitude ?? raw.lng ?? raw.lon);
+  const latitude = requiredNumber(raw.latitude ?? raw.lat, "Latitude");
+  const longitude = requiredNumber(raw.longitude ?? raw.lng ?? raw.lon, "Longitude");
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     throw new Error("Each row must include valid latitude and longitude values.");
   }
+
+  const currentPrice = requiredNumber(raw.currentPrice, "Current Price", { min: 0.01 });
+  const previousPrice = requiredNumber(raw.previousPrice, "Previous Price", { min: 0.01 });
+  const infrastructureScore = requiredNumber(raw.infrastructureScore ?? raw.infrastructure, "Infrastructure Score", {
+    min: 0,
+    max: 100,
+  });
+  const demandScore = requiredNumber(raw.demandScore ?? raw.demand, "Demand Score", {
+    min: 0,
+    max: 100,
+  });
+  const connectivityScore = requiredNumber(raw.connectivityScore ?? raw.connectivity, "Connectivity Score", {
+    min: 0,
+    max: 100,
+  });
+  const rentalYield = requiredNumber(raw.rentalYield ?? raw.yield, "Rental Yield", { min: 0 });
+  const listingDensity = requiredNumber(raw.listingDensity ?? raw.density, "Listing Density", {
+    min: 0,
+    max: 100,
+  });
 
   const base = {
     id: raw.id || crypto.randomUUID(),
@@ -203,13 +240,13 @@ function normalizeArea(raw) {
     city: raw.city || raw.town || "Unknown",
     latitude,
     longitude,
-    currentPrice: toNumber(raw.currentPrice),
-    previousPrice: toNumber(raw.previousPrice),
-    infrastructureScore: toNumber(raw.infrastructureScore ?? raw.infrastructure),
-    demandScore: toNumber(raw.demandScore ?? raw.demand),
-    connectivityScore: toNumber(raw.connectivityScore ?? raw.connectivity),
-    rentalYield: toNumber(raw.rentalYield ?? raw.yield),
-    listingDensity: toNumber(raw.listingDensity ?? raw.density),
+    currentPrice,
+    previousPrice,
+    infrastructureScore,
+    demandScore,
+    connectivityScore,
+    rentalYield,
+    listingDensity,
     upcomingProject: raw.upcomingProject || raw.project || "No project listed",
   };
 
@@ -805,18 +842,67 @@ document.querySelectorAll(".chip").forEach((chip) => {
 });
 
 function parseCsv(text) {
-  const lines = text.trim().split(/\r?\n/);
-  const headers = lines.shift().split(",").map((header) => header.trim());
+  const rows = [];
+  let currentRow = [];
+  let currentCell = "";
+  let inQuotes = false;
 
-  return lines
-    .filter(Boolean)
-    .map((line) => {
-      const values = line.split(",").map((value) => value.trim());
-      return headers.reduce((row, header, index) => {
-        row[header] = values[index] || "";
-        return row;
-      }, {});
-    });
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const nextCharacter = text[index + 1];
+
+    if (character === '"') {
+      if (inQuotes && nextCharacter === '"') {
+        currentCell += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (character === "," && !inQuotes) {
+      currentRow.push(currentCell.trim());
+      currentCell = "";
+      continue;
+    }
+
+    if ((character === "\n" || character === "\r") && !inQuotes) {
+      if (character === "\r" && nextCharacter === "\n") {
+        index += 1;
+      }
+
+      currentRow.push(currentCell.trim());
+      if (currentRow.some((cell) => cell !== "")) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentCell = "";
+      continue;
+    }
+
+    currentCell += character;
+  }
+
+  if (currentCell.length || currentRow.length) {
+    currentRow.push(currentCell.trim());
+    if (currentRow.some((cell) => cell !== "")) {
+      rows.push(currentRow);
+    }
+  }
+
+  if (!rows.length) {
+    return [];
+  }
+
+  const headers = rows.shift().map((header) => header.trim());
+
+  return rows.map((row) => {
+    return headers.reduce((record, header, index) => {
+      record[header] = row[index] || "";
+      return record;
+    }, {});
+  });
 }
 
 function toCsv(rows) {

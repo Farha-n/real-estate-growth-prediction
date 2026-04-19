@@ -288,7 +288,7 @@ button:hover {
 }
 
 .btn-row {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .form-actions {
@@ -319,11 +319,32 @@ button:hover {
 
 #map {
   width: 100%;
-  min-height: 520px;
+  min-height: 580px;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid #d5dde4;
   box-shadow: var(--shadow);
+}
+
+.heatmap-legend {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #43525f;
+}
+
+.heat-gradient {
+  width: 180px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid #ced7e0;
+  background: linear-gradient(90deg, #3b6d11 0%, #ef9f27 55%, #e24b4a 100%);
+}
+
+.heat-label {
+  font-weight: 600;
 }
 
 .analytics {
@@ -478,6 +499,19 @@ th {
   color: var(--low);
 }
 
+.source-badge {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #eef4fb;
+  color: #30465d;
+  border: 1px solid #d2deea;
+}
+
 .marker {
   width: 18px;
   height: 18px;
@@ -523,6 +557,10 @@ th {
   color: #405264;
 }
 
+.popup .source-badge {
+  margin-left: 6px;
+}
+
 @media (max-width: 1080px) {
   .layout {
     grid-template-columns: 1fr;
@@ -545,6 +583,10 @@ th {
   .form-actions,
   .analytics {
     grid-template-columns: 1fr;
+  }
+
+  .heat-gradient {
+    width: 120px;
   }
 
   .map-head,

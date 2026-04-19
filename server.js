@@ -3,6 +3,7 @@ const fs = require("fs/promises");
 const path = require("path");
 const { randomUUID } = require("crypto");
 const { MongoClient } = require("mongodb");
+const { scrapeMagicBricks, scrapeMunicipalDeclarations } = require("./scraper");
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -106,6 +107,7 @@ function normalizeArea(raw) {
     id: raw.id || randomUUID(),
     areaName: raw.areaName || raw.area || raw.name || "Unnamed Area",
     city: raw.city || raw.town || "Unknown",
+    source: raw.source || "manual",
     latitude,
     longitude,
     currentPrice,
@@ -280,6 +282,26 @@ async function start() {
       const nextAreas = cachedAreas.filter((area) => area.id !== req.params.id);
       cachedAreas = await store.setAreas(nextAreas);
       successResponse(res, { areas: cachedAreas });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/scrape", async (req, res, next) => {
+    try {
+      const { city = "Noida" } = req.body || {};
+
+      const [marketData, infraData] = await Promise.all([
+        scrapeMagicBricks(city),
+        scrapeMunicipalDeclarations(city),
+      ]);
+
+      successResponse(res, {
+        city,
+        scrapedAt: new Date().toISOString(),
+        marketData,
+        infraData,
+      });
     } catch (error) {
       next(error);
     }

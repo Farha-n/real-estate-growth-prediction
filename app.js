@@ -134,6 +134,7 @@ let priceChart;
 let factorChart;
 let map;
 let markers = new Map();
+let heatLayer;
 let editingAreaId = null;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -238,6 +239,7 @@ function normalizeArea(raw) {
     id: raw.id || crypto.randomUUID(),
     areaName: raw.areaName || raw.area || raw.name || "Unnamed Area",
     city: raw.city || raw.town || "Unknown",
+    source: raw.source || "manual",
     latitude,
     longitude,
     currentPrice,
@@ -278,7 +280,12 @@ function mergeUniqueAreas(existingAreas, incomingAreas) {
 }
 
 function sampleDataset() {
-  return sampleAreas.map((area) => normalizeArea({ ...area, id: crypto.randomUUID() }));
+  return sampleAreas.map((area) => normalizeArea({ ...area, id: crypto.randomUUID(), source: "sample" }));
+}
+
+function sourceBadgeHtml(source) {
+  const value = String(source || "manual").toLowerCase();
+  return `<span class="source-badge">${escapeHtml(value)}</span>`;
 }
 
 function loadLocalAreas() {
@@ -352,6 +359,7 @@ function popupHtml(area) {
     <article class="popup">
       <h3>${escapeHtml(area.areaName)}</h3>
       <p><strong>City:</strong> ${escapeHtml(area.city)}</p>
+      <p><strong>Source:</strong> ${sourceBadgeHtml(area.source)}</p>
       <p><strong>Growth Score:</strong> ${formatNumber(area.growthScore)}</p>
       <p><strong>Price Growth:</strong> ${formatNumber(area.priceGrowthPercent, 2)}%</p>
       <p><strong>Classification:</strong> ${escapeHtml(area.classification)}</p>
@@ -413,10 +421,39 @@ function renderMap() {
     markers.set(area.id, marker);
   });
 
+  renderHeatmap(visible);
+
   if (visible.length) {
     const bounds = L.latLngBounds(visible.map((area) => [area.latitude, area.longitude]));
     map.fitBounds(bounds, { padding: [36, 36], maxZoom: 10 });
   }
+}
+
+function renderHeatmap(visibleAreas) {
+  if (!map || !window.L?.heatLayer) return;
+
+  if (heatLayer) {
+    map.removeLayer(heatLayer);
+  }
+
+  const heatData = visibleAreas
+    .filter((area) => Number.isFinite(Number(area.latitude)) && Number.isFinite(Number(area.longitude)))
+    .map((area) => [
+      Number(area.latitude),
+      Number(area.longitude),
+      Number(area.growthScore) / 100,
+    ]);
+
+  heatLayer = L.heatLayer(heatData, {
+    radius: 35,
+    blur: 25,
+    maxZoom: 13,
+    gradient: {
+      0.3: "#3b6d11",
+      0.6: "#ef9f27",
+      1.0: "#e24b4a",
+    },
+  }).addTo(map);
 }
 
 function renderStats() {
@@ -498,7 +535,7 @@ function renderTable() {
     const row = document.createElement("tr");
     row.className = "empty-state-row";
     row.innerHTML = `
-      <td colspan="8">No matching areas found.</td>
+      <td colspan="9">No growth areas match current filters.</td>
     `;
     body.appendChild(row);
     document.querySelector("#resultCount").textContent = "0 results";
@@ -510,6 +547,7 @@ function renderTable() {
     row.innerHTML = `
       <td>${escapeHtml(area.areaName)}</td>
       <td>${escapeHtml(area.city)}</td>
+      <td>${sourceBadgeHtml(area.source)}</td>
       <td>${formatNumber(area.growthScore)}</td>
       <td>${formatNumber(area.priceGrowthPercent, 2)}%</td>
       <td>${formatNumber(area.rentalYield, 1)}%</td>
@@ -595,6 +633,17 @@ function ensureCharts() {
             tension: 0.3,
             fill: false,
           },
+          {
+            label: "Projected Trend",
+            data: [],
+            borderColor: "rgba(226,75,74,1)",
+            backgroundColor: "rgba(226,75,74,0.08)",
+            borderDash: [6, 6],
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: false,
+          },
         ],
       },
       options: {
@@ -645,9 +694,26 @@ function renderCharts() {
   growthChart.data.datasets[0].data = displayAreas.map((area) => Number(area.growthScore.toFixed(2)));
   growthChart.update();
 
-  priceChart.data.labels = displayAreas.map((area) => area.areaName);
-  priceChart.data.datasets[0].data = displayAreas.map((area) => Number(area.currentPrice));
-  priceChart.data.datasets[1].data = displayAreas.map((area) => Number(area.previousPrice));
+  const historicalPrices = displayAreas.map((area) => Number(area.currentPrice));
+  const forecastValues = linearForecast(historicalPrices, 6);
+  const forecastLabels = forecastValues.map((_, index) => `Forecast ${index + 1}`);
+
+  priceChart.data.labels = [
+    ...displayAreas.map((area) => area.areaName),
+    ...forecastLabels,
+  ];
+  priceChart.data.datasets[0].data = [
+    ...historicalPrices,
+    ...Array(forecastValues.length).fill(null),
+  ];
+  priceChart.data.datasets[1].data = [
+    ...displayAreas.map((area) => Number(area.previousPrice)),
+    ...Array(forecastValues.length).fill(null),
+  ];
+  priceChart.data.datasets[2].data = [
+    ...Array(historicalPrices.length).fill(null),
+    ...forecastValues,
+  ];
   priceChart.update();
 
   const total = displayAreas.length || 1;
@@ -665,6 +731,29 @@ function renderCharts() {
     Number(averageRentalYieldScore.toFixed(1)),
   ];
   factorChart.update();
+}
+
+function linearForecast(values, pointsAhead) {
+  const n = values.length;
+  if (!n) return [];
+
+  const xMean = (n - 1) / 2;
+  const yMean = values.reduce((sum, value) => sum + value, 0) / n;
+
+  let numerator = 0;
+  let denominator = 0;
+
+  values.forEach((value, index) => {
+    numerator += (index - xMean) * (value - yMean);
+    denominator += (index - xMean) ** 2;
+  });
+
+  const slope = denominator ? numerator / denominator : 0;
+  const intercept = yMean - slope * xMean;
+
+  return Array.from({ length: pointsAhead }, (_, index) =>
+    Math.round(intercept + slope * (n + index)),
+  );
 }
 
 function renderAll() {
@@ -832,6 +921,43 @@ document.querySelector("#loadSampleBtn").addEventListener("click", () => {
   }
 });
 
+document.querySelector("#scrapeBtn").addEventListener("click", async () => {
+  try {
+    const city = document.querySelector("#scrapeCityInput")?.value?.trim() || "Noida";
+
+    const response = await fetch("/api/scrape", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ city }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to scrape source data.");
+    }
+
+    const payload = await response.json();
+    const combined = [...payload.marketData, ...payload.infraData];
+    const scrapedAreas = normalizeMany(combined);
+
+    const nextAreas = mergeUniqueAreas(areas, scrapedAreas);
+    const addedCount = nextAreas.length - areas.length;
+
+    areas = nextAreas;
+    renderAll();
+    syncAreas();
+
+    window.alert(
+      addedCount === 0
+        ? "Scraped records already exist."
+        : `Added ${addedCount} scraped records for ${city}.`,
+    );
+  } catch (error) {
+    window.alert(error.message);
+  }
+});
+
 document.querySelector("#exportJsonBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(areas, null, 2)], { type: "application/json" });
   downloadFile(blob, "real-estate-growth-predictions.json");
@@ -920,6 +1046,7 @@ function toCsv(rows) {
   const headers = [
     "areaName",
     "city",
+    "source",
     "latitude",
     "longitude",
     "currentPrice",

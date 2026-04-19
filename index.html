@@ -56,12 +56,12 @@
             <p>How each investment hotspot is scored and classified.</p>
           </div>
           <ol class="logic-list">
-            <li>Collect real estate area data</li>
-            <li>Calculate price growth</li>
-            <li>Convert market indicators into normalized scores</li>
+            <li>Collect area, price, and infrastructure data</li>
+            <li>Measure price growth and rental yield</li>
+            <li>Normalize market indicators</li>
             <li>Apply weighted Growth Velocity Score</li>
-            <li>Classify each area as High, Emerging, Moderate, or Low</li>
-            <li>Display hotspots on map, charts, and ranking table</li>
+            <li>Project forward investment trend</li>
+            <li>Visualize hotspots using heatmap, charts, and ranking</li>
           </ol>
         </section>
 
@@ -155,6 +155,7 @@
               Upload CSV or JSON files to add new areas, add sample data, or export all predictions.
             </p>
           </div>
+          <input id="scrapeCityInput" placeholder="Enter city for scrape import" />
           <input id="uploadInput" type="file" accept=".csv,.json,application/json,text/csv" />
           <p class="helper-text">
             CSV or JSON with areaName, city, latitude, longitude, currentPrice, previousPrice,
@@ -162,6 +163,7 @@
             upcomingProject.
           </p>
           <div class="btn-row">
+            <button id="scrapeBtn" type="button" class="ghost">Scrape Live Data</button>
             <button id="loadSampleBtn" type="button" class="ghost">Add Sample Data</button>
             <button id="exportJsonBtn" type="button" class="ghost">Export JSON</button>
             <button id="exportCsvBtn" type="button" class="ghost">Export CSV</button>
@@ -185,6 +187,11 @@
         </div>
 
         <div id="map"></div>
+        <div class="heatmap-legend" aria-label="Heatmap legend">
+          <span class="heat-label">Lower Growth</span>
+          <div class="heat-gradient"></div>
+          <span class="heat-label">Higher Growth</span>
+        </div>
 
         <section class="analytics">
           <article class="card chart-card">
@@ -215,6 +222,7 @@
                 <tr>
                   <th>Area</th>
                   <th>City</th>
+                  <th>Source</th>
                   <th>Score</th>
                   <th>Price Growth</th>
                   <th>Yield</th>
@@ -231,6 +239,7 @@
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="./app.js"></script>
   </body>

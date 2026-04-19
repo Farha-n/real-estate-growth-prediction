@@ -291,19 +291,56 @@ async function start() {
     try {
       const { city = "Noida" } = req.body || {};
 
-      const [marketData, infraData] = await Promise.all([
+      const [marketResult, infraResult] = await Promise.allSettled([
         scrapeMagicBricks(city),
         scrapeMunicipalDeclarations(city),
       ]);
 
+      const marketData = marketResult.status === "fulfilled" ? marketResult.value : [];
+      const infraData = infraResult.status === "fulfilled" ? infraResult.value : [];
+
+      const liveSourcesUsed = [];
+      if (marketData.length) liveSourcesUsed.push("magicbricks");
+      if (infraData.length) liveSourcesUsed.push("ndmc-tenders");
+
+      const sourceErrors = [];
+      if (marketResult.status === "rejected") {
+        sourceErrors.push({ source: "magicbricks", error: marketResult.reason?.message || "Unknown error" });
+      }
+      if (infraResult.status === "rejected") {
+        sourceErrors.push({
+          source: "ndmc-tenders",
+          error: infraResult.reason?.message || "Unknown error",
+        });
+      }
+
+      const warnings = [];
+      if (!marketData.length && !infraData.length) {
+        warnings.push("No live records imported. Upstream sources may be temporarily unavailable.");
+      }
+
       successResponse(res, {
+        ok: true,
         city,
         scrapedAt: new Date().toISOString(),
         marketData,
         infraData,
+        liveSourcesUsed,
+        sourceErrors,
+        warnings,
       });
     } catch (error) {
-      next(error);
+      console.error("Scrape route fallback:", error);
+      successResponse(res, {
+        ok: true,
+        city: req.body?.city || "Noida",
+        scrapedAt: new Date().toISOString(),
+        marketData: [],
+        infraData: [],
+        liveSourcesUsed: [],
+        sourceErrors: [{ source: "scrape-route", error: error.message || "Unexpected error" }],
+        warnings: ["Scrape pipeline fallback applied. Please retry shortly."],
+      });
     }
   });
 

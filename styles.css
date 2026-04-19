@@ -124,6 +124,18 @@ button,
   border-color: rgba(90, 102, 114, 0.12);
 }
 
+.status-pill.scrape-ok {
+  background: #e8f6f3;
+  color: #0b5f57;
+  border-color: rgba(11, 114, 105, 0.28);
+}
+
+.status-pill.scrape-degraded {
+  background: #fff4e7;
+  color: #8f4c14;
+  border-color: rgba(181, 110, 35, 0.35);
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -196,6 +208,37 @@ button,
   color: #6c7781;
   font-size: 0.8rem;
   line-height: 1.45;
+}
+
+.scrape-proof {
+  border: 1px solid #d9e4ee;
+  background: #f7fbff;
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.scrape-proof p {
+  margin: 0;
+  color: #30465d;
+  font-size: 0.8rem;
+}
+
+.scrape-proof .meta-title {
+  font-weight: 700;
+  color: #1f3347;
+}
+
+.scrape-proof .meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.scrape-proof .meta-warning {
+  color: #8f4c14;
 }
 
 .logic-list {

@@ -27,6 +27,7 @@
           </p>
           <div class="hero-meta">
             <span class="status-pill" id="apiStatus">Loading data</span>
+            <span class="status-pill muted" id="lastScrapePill">Last scrape: Not run</span>
             <span class="status-pill muted">Problem Statement 3</span>
           </div>
         </header>
@@ -162,6 +163,10 @@
             infrastructureScore, demandScore, connectivityScore, rentalYield, listingDensity,
             upcomingProject.
           </p>
+          <p class="helper-text">Imports live source data for selected city.</p>
+          <section id="scrapeMeta" class="scrape-proof" aria-live="polite">
+            <p class="helper-text">No live scrape run yet.</p>
+          </section>
           <div class="btn-row">
             <button id="scrapeBtn" type="button" class="ghost">Scrape Live Data</button>
             <button id="loadSampleBtn" type="button" class="ghost">Add Sample Data</button>

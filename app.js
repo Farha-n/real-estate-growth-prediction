@@ -1,4 +1,5 @@
 const STORAGE_KEY = "realEstateGrowthPredictionAreas";
+const SCRAPE_META_KEY = "realEstateGrowthPredictionScrapeMeta";
 const API_HEALTH_URL = "/api/health";
 const API_AREAS_URL = "/api/areas";
 
@@ -286,6 +287,95 @@ function sampleDataset() {
 function sourceBadgeHtml(source) {
   const value = String(source || "manual").toLowerCase();
   return `<span class="source-badge">${escapeHtml(value)}</span>`;
+}
+
+function loadScrapeMeta() {
+  try {
+    const text = localStorage.getItem(SCRAPE_META_KEY);
+    if (!text) return null;
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistScrapeMeta(meta) {
+  try {
+    localStorage.setItem(SCRAPE_META_KEY, JSON.stringify(meta));
+  } catch {
+    // Ignore localStorage failures in restricted contexts.
+  }
+}
+
+function formatScrapeDate(value) {
+  if (!value) return "Unknown";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return new Intl.DateTimeFormat("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function renderLastScrapePill(meta) {
+  const pill = document.querySelector("#lastScrapePill");
+  if (!pill) return;
+
+  pill.classList.remove("scrape-ok", "scrape-degraded");
+
+  if (!meta || !meta.scrapedAt) {
+    pill.textContent = "Last scrape: Not run";
+    pill.classList.add("muted");
+    return;
+  }
+
+  const sources = Array.isArray(meta.liveSourcesUsed) ? meta.liveSourcesUsed : [];
+  const sourceErrors = Array.isArray(meta.sourceErrors) ? meta.sourceErrors : [];
+  const hasDegradedSources = sourceErrors.length > 0 || sources.length === 0;
+  const formatted = formatScrapeDate(meta.scrapedAt);
+  const city = meta.city ? ` (${meta.city})` : "";
+  pill.textContent = `Last scrape: ${formatted}${city}${hasDegradedSources ? " - Partial" : ""}`;
+  pill.classList.remove("muted");
+  pill.classList.add(hasDegradedSources ? "scrape-degraded" : "scrape-ok");
+}
+
+function renderScrapeMeta(meta) {
+  const host = document.querySelector("#scrapeMeta");
+  if (!host) return;
+
+  renderLastScrapePill(meta);
+
+  if (!meta) {
+    host.innerHTML = '<p class="helper-text">No live scrape run yet.</p>';
+    return;
+  }
+
+  const sources = Array.isArray(meta.liveSourcesUsed) ? meta.liveSourcesUsed : [];
+  const sourceErrors = Array.isArray(meta.sourceErrors) ? meta.sourceErrors : [];
+  const sourceHtml = sources.length
+    ? sources.map((source) => sourceBadgeHtml(`${source}-live`)).join(" ")
+    : '<span class="source-badge">unavailable</span>';
+
+  host.innerHTML = `
+    <p class="meta-title">Last Live Scrape</p>
+    <p><strong>City:</strong> ${escapeHtml(meta.city || "Unknown")}</p>
+    <p><strong>Imported:</strong> ${formatScrapeDate(meta.scrapedAt)}</p>
+    <p><strong>Records:</strong> Market ${toNumber(meta.marketCount, 0)} | Municipal ${toNumber(
+      meta.infraCount,
+      0,
+    )}</p>
+    <div class="meta-row"><strong>Sources:</strong> ${sourceHtml}</div>
+    ${sourceErrors
+      .map(
+        (item) =>
+          `<p class="meta-warning"><strong>Source warning:</strong> ${escapeHtml(item.source || "unknown")} - ${escapeHtml(item.error || "Unknown error")}</p>`,
+      )
+      .join("")}
+  `;
 }
 
 function loadLocalAreas() {
@@ -799,6 +889,7 @@ async function syncAreas() {
 
 async function bootstrapAreas() {
   const backup = loadLocalAreas();
+  renderScrapeMeta(loadScrapeMeta());
 
   try {
     const healthResponse = await fetch(API_HEALTH_URL);
@@ -938,8 +1029,24 @@ document.querySelector("#scrapeBtn").addEventListener("click", async () => {
     }
 
     const payload = await response.json();
-    const combined = [...payload.marketData, ...payload.infraData];
+    const marketData = Array.isArray(payload.marketData) ? payload.marketData : [];
+    const infraData = Array.isArray(payload.infraData) ? payload.infraData : [];
+    const sourceErrors = Array.isArray(payload.sourceErrors) ? payload.sourceErrors : [];
+    const warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
+    const combined = [...marketData, ...infraData];
     const scrapedAreas = normalizeMany(combined);
+    const liveSources = Array.isArray(payload.liveSourcesUsed) ? payload.liveSourcesUsed : [];
+
+    const scrapeMeta = {
+      city,
+      scrapedAt: payload.scrapedAt || new Date().toISOString(),
+      liveSourcesUsed: liveSources,
+      marketCount: marketData.length,
+      infraCount: infraData.length,
+      sourceErrors,
+    };
+    persistScrapeMeta(scrapeMeta);
+    renderScrapeMeta(scrapeMeta);
 
     const nextAreas = mergeUniqueAreas(areas, scrapedAreas);
     const addedCount = nextAreas.length - areas.length;
@@ -948,11 +1055,31 @@ document.querySelector("#scrapeBtn").addEventListener("click", async () => {
     renderAll();
     syncAreas();
 
-    window.alert(
-      addedCount === 0
-        ? "Scraped records already exist."
-        : `Added ${addedCount} scraped records for ${city}.`,
-    );
+    if (addedCount === 0) {
+      if (warnings.length || sourceErrors.length) {
+        window.alert(
+          `No new records imported for ${city}. Live source warnings: ${[
+            ...warnings,
+            ...sourceErrors.map((item) => `${item.source}: ${item.error}`),
+          ].join(" | ")}`,
+        );
+      } else {
+        window.alert("Scraped records already exist.");
+      }
+    } else {
+      const warningSuffix =
+        warnings.length || sourceErrors.length
+          ? ` Warnings: ${[
+              ...warnings,
+              ...sourceErrors.map((item) => `${item.source}: ${item.error}`),
+            ].join(" | ")}`
+          : "";
+      window.alert(
+        `Added ${addedCount} scraped records for ${city}. Live sources: ${
+          liveSources.length ? liveSources.join(", ") : "unavailable"
+        }.${warningSuffix}`,
+      );
+    }
   } catch (error) {
     window.alert(error.message);
   }

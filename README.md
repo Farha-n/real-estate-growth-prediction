@@ -15,7 +15,8 @@ This full-stack dashboard predicts high-growth investment zones over a 24 to 60 
 
 Recent practical upgrades included:
 - True heatmap overlay on the map
-- Scrape Live Data flow (prototype multi-source ingestion)
+- Scrape Live Data flow (live multi-source ingestion)
+- Deployment-safe scrape fallback (never hard-fails on upstream source outages)
 - Forecast extension line in the price chart
 - Source badges (manual, sample, scraped sources)
 - Clear system logic panel for evaluator readability
@@ -53,6 +54,9 @@ Recent practical upgrades included:
   - Classification markers
   - Heatmap layer (leaflet.heat)
   - Heatmap legend
+- Hero status pills showing:
+  - API state
+  - Last scrape timestamp and health state (healthy/degraded)
 - Ranking table with interactive row actions
 - Chart.js analytics:
   - Growth score bar chart
@@ -67,6 +71,17 @@ Recent practical upgrades included:
 - Scrape Live Data button with city input
 - Source labels visible in popup and table
 - JSON and CSV export
+
+### Live Source Connectors Implemented
+- Municipal/public source:
+  - NDMC tender notices page (`https://www.ndmc.gov.in/tenders/Default.aspx`)
+  - Parsed fields: tender title, inferred project type, inferred area mapping, infrastructure score signal
+  - Normalized source label: `municipal-live`
+- Market/listing source:
+  - MagicBricks city listings + listing detail pages
+  - Parsed fields: locality/area (from listing names), total property price, sq.ft from listing title
+  - Derived metrics: `currentPrice` (price/sq.ft), `listingDensity` from repeated localities
+  - Normalized source label: `magicbricks-live`
 
 ---
 
@@ -100,13 +115,33 @@ Growth Velocity Score =
 - DELETE /api/areas/:id
   - Delete by id
 - POST /api/scrape
-  - Scrape/import prototype data for a city
+  - Scrape/import live municipal + market data for a city
 
 Request body example for scrape:
 
 ```json
 { "city": "Noida" }
 ```
+
+Response shape (example):
+
+```json
+{
+  "ok": true,
+  "city": "Noida",
+  "scrapedAt": "2026-04-19T11:00:00.000Z",
+  "marketData": [],
+  "infraData": [],
+  "liveSourcesUsed": ["magicbricks", "ndmc-tenders"],
+  "sourceErrors": [],
+  "warnings": []
+}
+```
+
+Scrape route reliability behavior:
+- Uses per-source `Promise.allSettled` execution
+- Returns HTTP 200 with structured warnings even if one or both upstream sources are unavailable
+- Enforces outbound fetch timeouts to avoid deployment hangs
 
 ---
 
@@ -136,8 +171,8 @@ Each area is normalized to include:
 Common source values:
 - manual
 - sample
-- magicbricks-prototype
-- municipal-corp-prototype
+- magicbricks-live
+- municipal-live
 
 ---
 
@@ -159,6 +194,7 @@ PORT=3000
 MONGODB_URI=your_mongodb_connection_string
 MONGODB_DB=cyberjoar
 MONGODB_COLLECTION=real_estate_zones
+SCRAPE_FETCH_TIMEOUT_MS=12000
 ```
 
 Fallback behavior:
@@ -192,7 +228,7 @@ model-2-real-estate-prediction/
 This version is intentionally practical for evaluation:
 - No login/auth flow
 - No major architecture refactor
-- Prototype scrape adapters used for multi-source narrative
+- Live scraping adapters with lightweight parsing and normalization
 
 ---
 

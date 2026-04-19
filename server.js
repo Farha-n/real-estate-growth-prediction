@@ -58,8 +58,8 @@ function calculateMetrics(record) {
 }
 
 function normalizeArea(raw) {
-  const latitude = toNumber(raw.latitude ?? raw.lat);
-  const longitude = toNumber(raw.longitude ?? raw.lng ?? raw.lon);
+  const latitude = Number(raw.latitude ?? raw.lat);
+  const longitude = Number(raw.longitude ?? raw.lng ?? raw.lon);
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     throw new Error("Each row must include valid latitude and longitude values.");

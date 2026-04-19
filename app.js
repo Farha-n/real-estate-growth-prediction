@@ -189,8 +189,8 @@ function calculateMetrics(record) {
 }
 
 function normalizeArea(raw) {
-  const latitude = toNumber(raw.latitude ?? raw.lat);
-  const longitude = toNumber(raw.longitude ?? raw.lng ?? raw.lon);
+  const latitude = Number(raw.latitude ?? raw.lat);
+  const longitude = Number(raw.longitude ?? raw.lng ?? raw.lon);
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     throw new Error("Each row must include valid latitude and longitude values.");
@@ -330,10 +330,13 @@ function ensureMap() {
 
   map = L.map("map", { zoomControl: false }).setView([28.5, 77.2], 8);
   L.control.zoom({ position: "bottomright" }).addTo(map);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors",
-  }).addTo(map);
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    {
+      maxZoom: 19,
+      attribution: "Tiles &copy; Esri | Data &copy; OpenStreetMap contributors",
+    },
+  ).addTo(map);
 }
 
 function renderMap() {

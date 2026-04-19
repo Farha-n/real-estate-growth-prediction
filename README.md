@@ -67,12 +67,20 @@ Set these variables on Render if you want Atlas-backed persistence:
 
 If MongoDB variables are not present, the app uses `data/areas.json` as a writable local store.
 
+## Live Demo
+
+**Project Link:** https://real-estate-growth-prediction.onrender.com/
+
+**Health Check:** https://real-estate-growth-prediction.onrender.com/api/health
+
 ## Files
 
 - `index.html`
 - `styles.css`
 - `app.js`
 - `server.js`
+- `.env.example`
+- `render.yaml`
 - `package.json`
 - `sample-data.csv`
 - `sample-data.json`

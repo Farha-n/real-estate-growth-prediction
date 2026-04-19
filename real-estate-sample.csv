@@ -1,0 +1,11 @@
+areaName,city,latitude,longitude,currentPrice,previousPrice,infrastructureScore,demandScore,connectivityScore,rentalYield,listingDensity,upcomingProject
+Whitefield,Bengaluru,12.9698,77.7499,11800,9300,88,91,84,4.6,82,Metro Phase 2 expansion and IT corridor upgrade
+Sarjapur Road,Bengaluru,12.8610,77.7860,10400,8200,84,89,78,4.8,79,Peripheral ring road and tech park growth
+Hinjewadi Phase 3,Pune,18.5913,73.7389,8900,6900,86,85,80,4.9,76,Metro Line 3 and IT park expansion
+Wakad,Pune,18.5975,73.7898,9700,7800,81,83,82,4.5,73,Mumbai Pune highway access improvements
+Thane Ghodbunder Road,Thane,19.2544,72.9848,13200,10800,87,86,84,4.2,78,Metro corridor and commercial redevelopment
+Panvel,Navi Mumbai,18.9894,73.1175,8600,6500,90,82,88,4.7,71,Navi Mumbai airport and trans-harbour linkage
+Madhapur,Hyderabad,17.4483,78.3915,11600,9100,89,88,85,4.4,80,IT hub expansion and metro connectivity
+Kokapet,Hyderabad,17.3948,78.3409,9800,7200,86,84,80,4.9,75,Financial district expansion and ORR connectivity
+OMR Sholinganallur,Chennai,12.9010,80.2279,8200,6500,82,80,79,4.6,70,IT corridor and metro extension
+New Town,Kolkata,22.5810,88.4655,7100,5600,84,78,81,4.8,68,Smart city infrastructure and metro link

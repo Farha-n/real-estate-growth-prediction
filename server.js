@@ -9,7 +9,7 @@ const port = Number(process.env.PORT || 3000);
 const rootDir = __dirname;
 const dataDir = path.join(rootDir, "data");
 const dataFile = path.join(dataDir, "areas.json");
-const sampleFile = path.join(rootDir, "sample-data.json");
+const sampleFile = path.join(rootDir, "samples", "sample-data.json");
 
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static(rootDir));

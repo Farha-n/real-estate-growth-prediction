@@ -494,6 +494,17 @@ function renderTable() {
 
   body.innerHTML = "";
 
+  if (!sorted.length) {
+    const row = document.createElement("tr");
+    row.className = "empty-state-row";
+    row.innerHTML = `
+      <td colspan="8">No matching areas found.</td>
+    `;
+    body.appendChild(row);
+    document.querySelector("#resultCount").textContent = "0 results";
+    return;
+  }
+
   sorted.forEach((area) => {
     const row = document.createElement("tr");
     row.innerHTML = `

@@ -148,12 +148,13 @@ button,
 
 .stats h2 {
   margin: 0;
-  font-size: 1.42rem;
+  font-size: 1.62rem;
+  line-height: 1;
 }
 
 .stats p {
   margin: 2px 0 0;
-  color: var(--muted);
+  color: #74808b;
   font-size: 0.82rem;
 }
 
@@ -188,6 +189,13 @@ button,
   margin: 0;
   color: var(--muted);
   font-size: 0.87rem;
+}
+
+.helper-text {
+  margin: -2px 0 0;
+  color: #6c7781;
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .logic-list {
@@ -311,7 +319,7 @@ button:hover {
 
 #map {
   width: 100%;
-  min-height: 420px;
+  min-height: 520px;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid #d5dde4;
@@ -358,6 +366,35 @@ button:hover {
   margin-top: 10px;
 }
 
+.table-card tbody tr {
+  transition:
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.table-card tbody tr:hover,
+.table-card tbody tr:focus-within {
+  background: #f2f8fb;
+}
+
+.table-card tbody tr:hover td,
+.table-card tbody tr:focus-within td {
+  color: #1c2630;
+}
+
+.table-card tbody tr:hover {
+  box-shadow: inset 3px 0 0 #0b7269;
+}
+
+.empty-state-row td {
+  padding: 22px 12px;
+  text-align: center;
+  color: #66727d;
+  font-style: italic;
+  background: #fbfcfd;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -392,6 +429,17 @@ th {
   background: white;
   color: #25313b;
   font-size: 0.78rem;
+}
+
+.table-button[data-action="view"] {
+  border-color: #c9d5e0;
+  background: #ffffff;
+}
+
+.table-button[data-action="edit"] {
+  border-color: rgba(11, 114, 105, 0.25);
+  background: #eff8f6;
+  color: #0b5b53;
 }
 
 .table-button.danger {
@@ -507,5 +555,9 @@ th {
 
   #map {
     min-height: 360px;
+  }
+
+  .stats h2 {
+    font-size: 1.5rem;
   }
 }

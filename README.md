@@ -123,8 +123,10 @@ It helps answer:
 - `server.js` - Express server and API
 - `.env.example` - environment variable template
 - `render.yaml` - Render deployment configuration
-- `sample-data.csv` - sample CSV dataset
-- `sample-data.json` - sample JSON dataset
+- `data/areas.json` - local writable store for non-MongoDB mode
+- `samples/sample-data.csv` - sample CSV dataset
+- `samples/sample-data.json` - sample JSON dataset
+- `samples/real-estate-sample.csv` - alternate sample CSV dataset
 
 ## API Endpoints
 

@@ -244,6 +244,28 @@
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      (function ensureCanvasReadPerformanceHint() {
+        const originalGetContext = HTMLCanvasElement.prototype.getContext;
+        if (!originalGetContext || HTMLCanvasElement.prototype.__heatWillReadFrequentlyPatched) {
+          return;
+        }
+
+        HTMLCanvasElement.prototype.getContext = function patchedGetContext(type, attrs) {
+          if (type === "2d") {
+            const nextAttrs =
+              attrs && typeof attrs === "object"
+                ? { ...attrs, willReadFrequently: true }
+                : { willReadFrequently: true };
+            return originalGetContext.call(this, type, nextAttrs);
+          }
+
+          return originalGetContext.call(this, type, attrs);
+        };
+
+        HTMLCanvasElement.prototype.__heatWillReadFrequentlyPatched = true;
+      })();
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="./app.js"></script>
